@@ -1,26 +1,27 @@
 # Prisma + PostgreSQL Quickstart (TypeScript + ESM)
 
-## 1. Create a New Project
+## 1. Create Project + Setup
 
-```bash
+``` bash
 mkdir hello-prisma
 cd hello-prisma
-Initialize a TypeScript project
 npm init -y
 npm install typescript tsx @types/node --save-dev
 npx tsc --init
-2. Install Required Dependencies
+```
+
+## 2. Install Dependencies
+
+``` bash
 npm install prisma @types/pg --save-dev
 npm install @prisma/client @prisma/adapter-pg pg dotenv
-Package Explanation
-prisma → CLI for commands like init, migrate, generate
-@prisma/client → Prisma Client to query DB
-@prisma/adapter-pg → Adapter to connect Prisma with PostgreSQL
-pg → PostgreSQL driver
-@types/pg → TypeScript types for pg
-dotenv → Load environment variables
-3. Configure ESM Support
-tsconfig.json
+```
+
+## 3. Configure ESM
+
+### tsconfig.json
+
+``` json
 {
   "compilerOptions": {
     "module": "ESNext",
@@ -31,18 +32,26 @@ tsconfig.json
     "ignoreDeprecations": "6.0"
   }
 }
-package.json
+```
+
+### package.json
+
+``` json
 {
   "type": "module"
 }
-4. Initialize Prisma ORM
+```
+
+## 4. Initialize Prisma
+
+``` bash
 npx prisma
 npx prisma init --datasource-provider postgresql --output ../generated/prisma
-This command:
-Creates prisma/schema.prisma
-Creates .env
-Creates prisma.config.ts
-prisma.config.ts
+```
+
+### prisma.config.ts
+
+``` ts
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
@@ -55,7 +64,11 @@ export default defineConfig({
     url: env("DATABASE_URL"),
   },
 });
-prisma/schema.prisma (initial)
+```
+
+### prisma/schema.prisma
+
+``` prisma
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -64,28 +77,17 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-.env
+```
+
+### .env
+
+``` env
 DATABASE_URL="postgresql://username:password@localhost:5432/mydb?schema=public"
+```
 
-Replace with:
+## 5. Define Models
 
-username → your DB username
-password → your DB password
-localhost:5432 → host & port
-mydb → database name
-5. Define Your Data Model
-
-Update prisma/schema.prisma:
-
-generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-}
-
-datasource db {
-  provider = "postgresql"
-}
-
+``` prisma
 model User {
   id    Int    @id @default(autoincrement())
   email String @unique
@@ -102,32 +104,37 @@ model Post {
   author    User @relation(fields: [authorId], references: [id])
   authorId  Int
 }
-6. Run Migration & Generate Client
+```
+
+## 6. Migrate & Generate
+
+``` bash
 npx prisma migrate dev --name init
 npx prisma generate
-7. Instantiate Prisma Client
-lib/prisma.ts
+```
+
+## 7. Prisma Client Setup
+
+``` ts
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
-const adapter = new PrismaPg({
-  connectionString,
-});
+const adapter = new PrismaPg({ connectionString });
 
-const prisma = new PrismaClient({
-  adapter,
-});
+const prisma = new PrismaClient({ adapter });
 
 export { prisma };
-8. Write Your First Query
-script.ts
+```
+
+## 8. First Query
+
+``` ts
 import { prisma } from "./lib/prisma";
 
 async function main() {
-  // Create a user with a post
   const user = await prisma.user.create({
     data: {
       name: "Alice",
@@ -140,18 +147,13 @@ async function main() {
         },
       },
     },
-    include: {
-      posts: true,
-    },
+    include: { posts: true },
   });
 
   console.log("Created user:", user);
 
-  // Fetch all users
   const allUsers = await prisma.user.findMany({
-    include: {
-      posts: true,
-    },
+    include: { posts: true },
   });
 
   console.log("All users:", JSON.stringify(allUsers, null, 2));
@@ -166,7 +168,16 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
-Run the Script
+```
+
+## 9. Run
+
+``` bash
 npx tsx script.ts
-Prisma Studio (GUI for DB)
+```
+
+## 10. Prisma Studio
+
+``` bash
 npx prisma studio
+```
