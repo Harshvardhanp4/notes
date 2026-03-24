@@ -1,40 +1,26 @@
-1. Create a new project
+# Prisma + PostgreSQL Quickstart (TypeScript + ESM)
 
+## 1. Create a New Project
+
+```bash
 mkdir hello-prisma
 cd hello-prisma
-Initialize a TypeScript project:
-
-npm
-pnpm
-yarn
-bun
-
+Initialize a TypeScript project
 npm init -y
 npm install typescript tsx @types/node --save-dev
 npx tsc --init
-2. Install required dependencies
-Install the packages needed for this quickstart:
-
-npm
-pnpm
-yarn
-bun
-
+2. Install Required Dependencies
 npm install prisma @types/pg --save-dev
 npm install @prisma/client @prisma/adapter-pg pg dotenv
-Here's what each package does:
-
-prisma - The Prisma CLI for running commands like prisma init, prisma migrate, and prisma generate
-@prisma/client - The Prisma Client library for querying your database
-@prisma/adapter-pg - The node-postgres driver adapter that connects Prisma Client to your database
-pg - The node-postgres database driver
-@types/pg - TypeScript type definitions for node-postgres
-dotenv - Loads environment variables from your .env file
-3. Configure ESM support
-Update tsconfig.json for ESM compatibility:
-
+Package Explanation
+prisma → CLI for commands like init, migrate, generate
+@prisma/client → Prisma Client to query DB
+@prisma/adapter-pg → Adapter to connect Prisma with PostgreSQL
+pg → PostgreSQL driver
+@types/pg → TypeScript types for pg
+dotenv → Load environment variables
+3. Configure ESM Support
 tsconfig.json
-
 {
   "compilerOptions": {
     "module": "ESNext",
@@ -45,41 +31,21 @@ tsconfig.json
     "ignoreDeprecations": "6.0"
   }
 }
-Update package.json to enable ESM:
-
 package.json
-
 {
   "type": "module"
 }
 4. Initialize Prisma ORM
-You can now invoke the Prisma CLI by prefixing it with npx:
-
-npm
-pnpm
-yarn
-bun
-
 npx prisma
-Next, set up your Prisma ORM project by creating your Prisma Schema file with the following command:
-
-npm
-pnpm
-yarn
-bun
-
 npx prisma init --datasource-provider postgresql --output ../generated/prisma
-This command does a few things:
-
-Creates a prisma/ directory with a schema.prisma file containing your database connection and schema models
-Creates a .env file in the root directory for environment variables
-Creates a prisma.config.ts file for Prisma configuration
-The generated prisma.config.ts file looks like this:
-
+This command:
+Creates prisma/schema.prisma
+Creates .env
+Creates prisma.config.ts
 prisma.config.ts
-
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -89,93 +55,79 @@ export default defineConfig({
     url: env("DATABASE_URL"),
   },
 });
-The generated schema uses the ESM-first prisma-client generator with a custom output path:
-
-prisma/schema.prisma
-
+prisma/schema.prisma (initial)
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
 }
+
 datasource db {
   provider = "postgresql"
 }
-Update your .env file with your PostgreSQL connection string:
-
 .env
-
 DATABASE_URL="postgresql://username:password@localhost:5432/mydb?schema=public"
-Replace the placeholders with your actual database credentials:
 
-username: Your PostgreSQL username
-password: Your PostgreSQL password
-localhost:5432: Your PostgreSQL host and port
-mydb: Your database name
-5. Define your data model
-Open prisma/schema.prisma and add the following models:
+Replace with:
 
-prisma/schema.prisma
+username → your DB username
+password → your DB password
+localhost:5432 → host & port
+mydb → database name
+5. Define Your Data Model
+
+Update prisma/schema.prisma:
 
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
 }
+
 datasource db {
   provider = "postgresql"
 }
-model User { 
-  id    Int     @id @default(autoincrement()) 
-  email String  @unique
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
   name  String?
   posts Post[]
-} 
-model Post { 
-  id        Int     @id @default(autoincrement()) 
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
   title     String
   content   String?
-  published Boolean @default(false) 
-  author    User    @relation(fields: [authorId], references: [id]) 
+  published Boolean @default(false)
+
+  author    User @relation(fields: [authorId], references: [id])
   authorId  Int
-} 
-6. Create and apply your first migration
-Create your first migration to set up the database tables:
-
-npm
-pnpm
-yarn
-bun
-
+}
+6. Run Migration & Generate Client
 npx prisma migrate dev --name init
-This command creates the database tables based on your schema.
-
-Now run the following command to generate the Prisma Client:
-
-npm
-pnpm
-yarn
-bun
-
 npx prisma generate
 7. Instantiate Prisma Client
-Now that you have all the dependencies installed, you can instantiate Prisma Client. You need to pass an instance of the Prisma ORM driver adapter adapter to the PrismaClient constructor:
-
 lib/prisma.ts
-
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+
 const connectionString = `${process.env.DATABASE_URL}`;
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
+
+const adapter = new PrismaPg({
+  connectionString,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
+
 export { prisma };
-8. Write your first query
-Create a script.ts file to test your setup:
-
+8. Write Your First Query
 script.ts
-
 import { prisma } from "./lib/prisma";
+
 async function main() {
-  // Create a new user with a post
+  // Create a user with a post
   const user = await prisma.user.create({
     data: {
       name: "Alice",
@@ -192,15 +144,19 @@ async function main() {
       posts: true,
     },
   });
+
   console.log("Created user:", user);
-  // Fetch all users with their posts
+
+  // Fetch all users
   const allUsers = await prisma.user.findMany({
     include: {
       posts: true,
     },
   });
+
   console.log("All users:", JSON.stringify(allUsers, null, 2));
 }
+
 main()
   .then(async () => {
     await prisma.$disconnect();
@@ -210,18 +166,7 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
-Run the script:
-
-npm
-pnpm
-yarn
-bun
-
+Run the Script
 npx tsx script.ts
-You should see the created user and all users printed to the console!
-
-9. Explore your data with Prisma Studio
-Prisma Studio is a visual editor for your database. Launch it with:
-
-
+Prisma Studio (GUI for DB)
 npx prisma studio
